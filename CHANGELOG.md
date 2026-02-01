@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.4.1] - 2026-02-01
+
+### Fixed
+
+- Improved error message when `push` fails due to missing write permissions on the service account token.
+
 ## [0.4.0] - 2026-02-01
 
 ### Added

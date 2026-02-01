@@ -65,17 +65,28 @@ fn push() -> Result<()> {
 
 fn update_secret(secret_id: &str, value: &str, token: &str) -> Result<()> {
     let output = Command::new("bws")
-        .args(["secret", "edit", secret_id, "--value", value])
+        .args(["secret", "edit", "--value", value, secret_id])
         .env("BWS_ACCESS_TOKEN", token)
         .output()
         .context("Failed to run bws CLI. Is it installed?")?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        anyhow::bail!("bws failed: {stderr}");
+        return Err(check_bws_error(&stderr, secret_id));
     }
 
     Ok(())
+}
+
+fn check_bws_error(stderr: &str, secret_id: &str) -> anyhow::Error {
+    if stderr.contains("404") || stderr.contains("Resource not found") {
+        anyhow::anyhow!(
+            "Secret {secret_id} not found or access denied. \
+             Check that your service account token has write permissions."
+        )
+    } else {
+        anyhow::anyhow!("bws failed: {stderr}")
+    }
 }
 
 fn fetch_secret(secret_id: &str, token: &str) -> Result<String> {
@@ -97,4 +108,28 @@ fn fetch_secret(secret_id: &str, token: &str) -> Result<String> {
         .as_str()
         .map(|s| s.to_string())
         .context("Secret value not found in bws output")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn check_bws_error_returns_permission_message_on_404() {
+        let stderr = "Error: Received error message from server: [404 Not Found] {\"message\":\"Resource not found.\"}";
+        let err = check_bws_error(stderr, "abc-123");
+        let msg = err.to_string();
+        assert!(msg.contains("not found or access denied"), "got: {msg}");
+        assert!(msg.contains("write permissions"), "got: {msg}");
+        assert!(msg.contains("abc-123"), "got: {msg}");
+    }
+
+    #[test]
+    fn check_bws_error_returns_raw_stderr_for_other_errors() {
+        let stderr = "Error: something else went wrong";
+        let err = check_bws_error(stderr, "abc-123");
+        let msg = err.to_string();
+        assert!(msg.contains("bws failed:"), "got: {msg}");
+        assert!(msg.contains("something else went wrong"), "got: {msg}");
+    }
 }
