@@ -11,6 +11,8 @@ use std::process::Command;
 enum Cli {
     /// Download secrets from Bitwarden and write them to configured .env files
     Sync,
+    /// Upload local .env files to Bitwarden secrets
+    Push,
     /// Update dusk-warden to the latest release
     Update,
 }
@@ -20,6 +22,7 @@ fn main() -> Result<()> {
 
     match cli {
         Cli::Sync => sync()?,
+        Cli::Push => push()?,
         Cli::Update => update::update()?,
     }
 
@@ -38,6 +41,38 @@ fn sync() -> Result<()> {
             .with_context(|| format!("Failed to write {}", secret.path))?;
 
         println!("Wrote {}", secret.path);
+    }
+
+    Ok(())
+}
+
+fn push() -> Result<()> {
+    let config = Config::load()?;
+    let token = config::resolve_bws_token()?;
+
+    for secret in &config.secrets {
+        let value = std::fs::read_to_string(&secret.path)
+            .with_context(|| format!("Failed to read {}", secret.path))?;
+
+        update_secret(&secret.id, &value, &token)
+            .with_context(|| format!("Failed to push secret for {}", secret.path))?;
+
+        println!("Pushed {}", secret.path);
+    }
+
+    Ok(())
+}
+
+fn update_secret(secret_id: &str, value: &str, token: &str) -> Result<()> {
+    let output = Command::new("bws")
+        .args(["secret", "edit", secret_id, "--value", value])
+        .env("BWS_ACCESS_TOKEN", token)
+        .output()
+        .context("Failed to run bws CLI. Is it installed?")?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        anyhow::bail!("bws failed: {stderr}");
     }
 
     Ok(())

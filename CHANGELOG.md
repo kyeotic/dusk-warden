@@ -4,13 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
-## [0.3.0]
+## [0.4.0] - 2026-02-01
+
+### Added
+
+- `push` command to upload local `.env` files to Bitwarden secrets.
+
+## [0.3.0] - 2026-01-31
 
 ### Added
 
 - `.bws` file lookup for `BWS_ACCESS_TOKEN`. Searches from the current directory upward to `$HOME`, falling back to the environment variable.
 
-## [0.1.0]
+## [0.1.0] - 2026-01-31
 
 ### Added
 
