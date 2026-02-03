@@ -10,6 +10,7 @@ serde = { version = "1", features = ["derive"] }
 toml = "0.8"
 serde_json = "1"
 anyhow = "1"
+minijinja = "2"
 ureq = { version = "3", features = ["json"] }
 self-replace = "1"
 flate2 = "1"

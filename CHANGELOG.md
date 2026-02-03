@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.5.1]
+
+### Added
+
+- Template variable support in paths using `{{ env.VAR }}` syntax for environment variable interpolation.
+
 ## [0.5.0] - 2026-02-02
 
 ### Changed

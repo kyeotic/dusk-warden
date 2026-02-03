@@ -1,5 +1,7 @@
 use anyhow::{Context, Result};
+use minijinja::{Environment, context};
 use serde::Deserialize;
+use std::collections::HashMap;
 use std::path::PathBuf;
 
 const CONFIG_FILE: &str = ".vault-sync.toml";
@@ -21,8 +23,36 @@ impl Config {
         let content = std::fs::read_to_string(CONFIG_FILE)
             .with_context(|| format!("Could not read {CONFIG_FILE}"))?;
 
-        toml::from_str(&content).with_context(|| format!("Failed to parse {CONFIG_FILE}"))
+        let mut config: Config =
+            toml::from_str(&content).with_context(|| format!("Failed to parse {CONFIG_FILE}"))?;
+
+        config.expand_templates()?;
+        Ok(config)
     }
+
+    fn expand_templates(&mut self) -> Result<()> {
+        let env_vars: HashMap<String, String> = std::env::vars().collect();
+
+        for secret in &mut self.secrets {
+            secret.path = expand_template(&secret.path, &env_vars)
+                .with_context(|| format!("Failed to expand template in path: {}", secret.path))?;
+        }
+
+        Ok(())
+    }
+}
+
+fn expand_template(template: &str, env_vars: &HashMap<String, String>) -> Result<String> {
+    // Skip processing if no template markers present
+    if !template.contains("{{") {
+        return Ok(template.to_string());
+    }
+
+    let mut jinja = Environment::new();
+    jinja.add_template("_", template)?;
+    let tmpl = jinja.get_template("_")?;
+
+    Ok(tmpl.render(context! { env => env_vars })?)
 }
 
 pub fn resolve_bws_token() -> Result<String> {
@@ -73,4 +103,49 @@ pub fn resolve_bws_token() -> Result<String> {
     anyhow::bail!(
         "BWS_ACCESS_TOKEN not found. Set it as an environment variable or in a {BWS_FILE} file."
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn expand_template_no_markers_returns_unchanged() {
+        let env_vars = HashMap::new();
+        let result = expand_template("plain/path/file.env", &env_vars).unwrap();
+        assert_eq!(result, "plain/path/file.env");
+    }
+
+    #[test]
+    fn expand_template_substitutes_env_var() {
+        let mut env_vars = HashMap::new();
+        env_vars.insert("HOME".to_string(), "/home/user".to_string());
+        let result = expand_template("{{ env.HOME }}/projects/.env", &env_vars).unwrap();
+        assert_eq!(result, "/home/user/projects/.env");
+    }
+
+    #[test]
+    fn expand_template_substitutes_multiple_vars() {
+        let mut env_vars = HashMap::new();
+        env_vars.insert("HOME".to_string(), "/home/user".to_string());
+        env_vars.insert("PROJECT".to_string(), "myapp".to_string());
+        let result =
+            expand_template("{{ env.HOME }}/{{ env.PROJECT }}/.env", &env_vars).unwrap();
+        assert_eq!(result, "/home/user/myapp/.env");
+    }
+
+    #[test]
+    fn expand_template_missing_var_returns_empty() {
+        let env_vars = HashMap::new();
+        let result = expand_template("{{ env.MISSING }}/.env", &env_vars).unwrap();
+        assert_eq!(result, "/.env");
+    }
+
+    #[test]
+    fn expand_template_mixed_literal_and_var() {
+        let mut env_vars = HashMap::new();
+        env_vars.insert("USER".to_string(), "alice".to_string());
+        let result = expand_template("/home/{{ env.USER }}/config", &env_vars).unwrap();
+        assert_eq!(result, "/home/alice/config");
+    }
 }

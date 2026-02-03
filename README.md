@@ -46,6 +46,18 @@ path = "services/api/.env"
 
 Each entry maps a Bitwarden secret (by ID) to a local file path where its contents will be written.
 
+### Template Variables
+
+Paths support template variables using `{{ scope.name }}` syntax. Currently supported scopes:
+
+- **`env`** — Environment variables
+
+```toml
+[[secrets]]
+id = "your-bitwarden-secret-id"
+path = "{{ env.HOME }}/projects/myapp/.env"
+```
+
 2. Run the sync:
 
 ```bash
