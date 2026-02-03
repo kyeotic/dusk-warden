@@ -64,7 +64,19 @@ path = "{{ env.HOME }}/projects/myapp/.env"
 vault-sync sync
 ```
 
-This fetches each secret from Bitwarden and writes its value to the configured path.
+This fetches each secret from Bitwarden and writes its value to the configured path. The command reports the status of each file:
+
+- `{path} up to date` — file content matches the secret, no write needed
+- `{path} updated` — file was written with new content
+
+### Dry Run
+
+To preview changes without writing files, use the `--dry-run` flag (or its `--check` alias):
+
+```bash
+vault-sync sync --dry-run
+vault-sync sync --check
+```
 
 ## Secret Format
 
@@ -77,6 +89,14 @@ DEBUG=true
 ```
 
 The value is written to the target path exactly as-is, with no transformation. Structure your secrets as complete, ready-to-use `.env` files.
+
+## Version
+
+```bash
+vault-sync version
+```
+
+Prints the current version of vault-sync.
 
 ## Self-Update
 

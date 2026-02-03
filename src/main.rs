@@ -10,26 +10,33 @@ use std::process::Command;
 #[command(name = "vault-sync", about = "Sync Bitwarden secrets to .env files")]
 enum Cli {
     /// Download secrets from Bitwarden and write them to configured .env files
-    Sync,
+    Sync {
+        /// Show what would change without writing files
+        #[arg(long, visible_alias = "check")]
+        dry_run: bool,
+    },
     /// Upload local .env files to Bitwarden secrets
     Push,
     /// Update vault-sync to the latest release
     Update,
+    /// Print version information
+    Version,
 }
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match cli {
-        Cli::Sync => sync()?,
+        Cli::Sync { dry_run } => sync(dry_run)?,
         Cli::Push => push()?,
         Cli::Update => update::update()?,
+        Cli::Version => println!("vault-sync {}", env!("CARGO_PKG_VERSION")),
     }
 
     Ok(())
 }
 
-fn sync() -> Result<()> {
+fn sync(dry_run: bool) -> Result<()> {
     let config = Config::load()?;
     let token = config::resolve_bws_token()?;
 
@@ -37,10 +44,20 @@ fn sync() -> Result<()> {
         let value = fetch_secret(&secret.id, &token)
             .with_context(|| format!("Failed to fetch secret for {}", secret.path))?;
 
-        std::fs::write(&secret.path, value)
-            .with_context(|| format!("Failed to write {}", secret.path))?;
+        let existing = std::fs::read_to_string(&secret.path).ok();
+        let changed = existing.as_ref() != Some(&value);
 
-        println!("Wrote {}", secret.path);
+        if changed {
+            if dry_run {
+                println!("{} would be updated", secret.path);
+            } else {
+                std::fs::write(&secret.path, value)
+                    .with_context(|| format!("Failed to write {}", secret.path))?;
+                println!("{} updated", secret.path);
+            }
+        } else {
+            println!("{} up to date", secret.path);
+        }
     }
 
     Ok(())

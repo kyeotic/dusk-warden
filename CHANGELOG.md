@@ -4,11 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
-## [0.5.1]
+## [0.5.1] - 2026-02-03
+
+### Added
+
+- `version` command to print the current version.
+- `--dry-run` option (with `--check` alias) for `sync` command to preview changes without writing files.
+- Change detection in `sync` command — reports "up to date" or "updated" status for each file.
+
+## [0.5.1] - 2026-02-03
 
 ### Added
 
 - Template variable support in paths using `{{ env.VAR }}` syntax for environment variable interpolation.
+- `version` command to print the current version.
 
 ## [0.5.0] - 2026-02-02
 
