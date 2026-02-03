@@ -4,7 +4,24 @@ mod update;
 use anyhow::{Context, Result};
 use clap::Parser;
 use config::Config;
+use owo_colors::OwoColorize;
+use rayon::prelude::*;
 use std::process::Command;
+
+/// Print a cargo-style status line with a bold green label (for actions taken).
+fn status_green(label: &str, message: &str) {
+    println!("{:>12} {}", label.bold().green(), message);
+}
+
+/// Print a cargo-style status line with a bold cyan label (for no change needed).
+fn status_cyan(label: &str, message: &str) {
+    println!("{:>12} {}", label.bold().cyan(), message);
+}
+
+/// Print a cargo-style status line with a bold yellow label (for dry-run preview).
+fn status_yellow(label: &str, message: &str) {
+    println!("{:>12} {}", label.bold().yellow(), message);
+}
 
 #[derive(Parser)]
 #[command(name = "vault-sync", about = "Sync Bitwarden secrets to .env files")]
@@ -40,23 +57,32 @@ fn sync(dry_run: bool) -> Result<()> {
     let config = Config::load()?;
     let token = config::resolve_bws_token()?;
 
-    for secret in &config.secrets {
-        let value = fetch_secret(&secret.id, &token)
-            .with_context(|| format!("Failed to fetch secret for {}", secret.path))?;
+    // Fetch all secrets in parallel (the slow part)
+    let results: Vec<_> = config
+        .secrets
+        .par_iter()
+        .map(|secret| {
+            let value = fetch_secret(&secret.id, &token)
+                .with_context(|| format!("Failed to fetch secret for {}", secret.path))?;
+            let existing = std::fs::read_to_string(&secret.path).ok();
+            Ok((secret, value, existing))
+        })
+        .collect::<Result<Vec<_>>>()?;
 
-        let existing = std::fs::read_to_string(&secret.path).ok();
+    // Process results sequentially (file writes and output)
+    for (secret, value, existing) in results {
         let changed = existing.as_ref() != Some(&value);
 
         if changed {
             if dry_run {
-                println!("{} would be updated", secret.path);
+                status_yellow("Would update", &secret.path);
             } else {
-                std::fs::write(&secret.path, value)
+                std::fs::write(&secret.path, &value)
                     .with_context(|| format!("Failed to write {}", secret.path))?;
-                println!("{} updated", secret.path);
+                status_green("Updated", &secret.path);
             }
         } else {
-            println!("{} up to date", secret.path);
+            status_cyan("Up to date", &secret.path);
         }
     }
 
@@ -74,7 +100,7 @@ fn push() -> Result<()> {
         update_secret(&secret.id, &value, &token)
             .with_context(|| format!("Failed to push secret for {}", secret.path))?;
 
-        println!("Pushed {}", secret.path);
+        status_green("Pushed", &secret.path);
     }
 
     Ok(())

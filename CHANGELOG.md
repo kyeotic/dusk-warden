@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.5.2] - 2026-02-03
+
+### Added
+
+- Pretty printed output for `sync`.
+
+### Changed
+
+- `sync` now makes parallel calls to `bws` for secrets, instead of serial calls.
+
+## [0.5.1] - 2026-02-03
+
 ## [0.5.1] - 2026-02-03
 
 ### Added
