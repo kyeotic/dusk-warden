@@ -3,7 +3,7 @@ default:
 
 # Run the CLI
 run *args:
-    cargo run -- {{args}}
+    cargo run -- {{ args }}
 
 # Build in release mode
 build:
@@ -38,6 +38,10 @@ fmt-check:
 #   just release 0.3.0   # explicit version
 # Dry run (default) shows what would happen without making changes.
 # Pass --execute to actually perform the release:
-#   just release patch --execute
+
+# just release patch --execute
 release *args:
-    cargo release {{args}}
+    cargo release {{ args }}
+
+install-local:
+    cargo install --path .
