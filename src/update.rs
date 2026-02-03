@@ -3,7 +3,7 @@ use flate2::read::GzDecoder;
 use std::io::Read;
 use tar::Archive;
 
-const REPO: &str = "kyeotic/dusk-warden";
+const REPO: &str = "kyeotic/vault-sync";
 const CURRENT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 fn get_target() -> Result<&'static str> {
@@ -50,7 +50,7 @@ pub fn update() -> Result<()> {
 
     let target = get_target()?;
     let url = format!(
-        "https://github.com/{REPO}/releases/download/{latest_tag}/dusk-warden-{target}.tar.gz"
+        "https://github.com/{REPO}/releases/download/{latest_tag}/vault-sync-{target}.tar.gz"
     );
 
     println!("Downloading {url}...");
@@ -73,7 +73,7 @@ pub fn update() -> Result<()> {
         .find_map(|entry| {
             let mut entry = entry.ok()?;
             let path = entry.path().ok()?;
-            if path.file_name()? == "dusk-warden" {
+            if path.file_name()? == "vault-sync" {
                 let mut buf = Vec::new();
                 entry.read_to_end(&mut buf).ok()?;
                 Some(buf)
@@ -84,7 +84,7 @@ pub fn update() -> Result<()> {
         .context("Binary not found in archive")?;
 
     // Write binary to a temp file, then use self_replace to atomically swap
-    let tmp = std::env::temp_dir().join("dusk-warden-update");
+    let tmp = std::env::temp_dir().join("vault-sync-update");
     std::fs::write(&tmp, &binary).context("Failed to write temp binary")?;
     self_replace::self_replace(&tmp).context("Failed to replace binary")?;
     let _ = std::fs::remove_file(&tmp);

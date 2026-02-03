@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-REPO="kyeotic/dusk-warden"
+REPO="kyeotic/vault-sync"
 
 # Detect OS
 case "$(uname -s)" in
@@ -32,16 +32,16 @@ tag=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" | grep '
 echo "Latest release: ${tag}"
 
 # Download and extract
-url="https://github.com/${REPO}/releases/download/${tag}/dusk-warden-${target}.tar.gz"
+url="https://github.com/${REPO}/releases/download/${tag}/vault-sync-${target}.tar.gz"
 echo "Downloading ${url}..."
 
 tmpdir=$(mktemp -d)
 trap 'rm -rf "$tmpdir"' EXIT
 
-curl -fsSL "$url" -o "${tmpdir}/dusk-warden.tar.gz"
-tar xzf "${tmpdir}/dusk-warden.tar.gz" -C "$tmpdir"
+curl -fsSL "$url" -o "${tmpdir}/vault-sync.tar.gz"
+tar xzf "${tmpdir}/vault-sync.tar.gz" -C "$tmpdir"
 
 # Install
 install -d /usr/local/bin
-install "${tmpdir}/dusk-warden" /usr/local/bin/dusk-warden
-echo "Installed dusk-warden to /usr/local/bin/dusk-warden"
+install "${tmpdir}/vault-sync" /usr/local/bin/vault-sync
+echo "Installed vault-sync to /usr/local/bin/vault-sync"

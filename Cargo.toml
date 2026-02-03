@@ -1,5 +1,5 @@
 [package]
-name = "dusk-warden"
+name = "vault-sync"
 version = "0.4.1"
 edition = "2024"
 publish = false

@@ -1,4 +1,4 @@
-# dusk-warden
+# vault-sync
 
 Sync [Bitwarden Secrets Manager](https://bitwarden.com/products/secrets-manager/) secrets to local `.env` files using the [Bitwarden Secrets CLI](https://bitwarden.com/help/secrets-manager-cli/).
 
@@ -10,17 +10,17 @@ Sync [Bitwarden Secrets Manager](https://bitwarden.com/products/secrets-manager/
 ## Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/kyeotic/dusk-warden/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/kyeotic/vault-sync/main/install.sh | bash
 ```
 
-Or download a binary from the [releases page](https://github.com/kyeotic/dusk-warden/releases).
+Or download a binary from the [releases page](https://github.com/kyeotic/vault-sync/releases).
 
 ## Access Token
 
-dusk-warden needs a `BWS_ACCESS_TOKEN` to authenticate with the Bitwarden Secrets CLI. It resolves the token in this order:
+vault-sync needs a `BWS_ACCESS_TOKEN` to authenticate with the Bitwarden Secrets CLI. It resolves the token in this order:
 
 1. **Environment variable** — if `BWS_ACCESS_TOKEN` is set, it is used directly.
-2. **`.bws` file** — otherwise, dusk-warden searches for a `.bws` file starting from the current directory and walking up parent directories, stopping at `$HOME`.
+2. **`.bws` file** — otherwise, vault-sync searches for a `.bws` file starting from the current directory and walking up parent directories, stopping at `$HOME`.
 
 A `.bws` file uses simple `KEY=value` format:
 
@@ -32,7 +32,7 @@ Quotes around the value are optional and will be stripped. This file should be a
 
 ## Quick Start
 
-1. Create a `.dusk-warden.toml` config file in your project root:
+1. Create a `.vault-sync.toml` config file in your project root:
 
 ```toml
 [[secrets]]
@@ -49,7 +49,7 @@ Each entry maps a Bitwarden secret (by ID) to a local file path where its conten
 2. Run the sync:
 
 ```bash
-dusk-warden sync
+vault-sync sync
 ```
 
 This fetches each secret from Bitwarden and writes its value to the configured path.
@@ -69,7 +69,7 @@ The value is written to the target path exactly as-is, with no transformation. S
 ## Self-Update
 
 ```bash
-dusk-warden update
+vault-sync update
 ```
 
 This checks for the latest GitHub release and replaces the binary in-place if a newer version is available.

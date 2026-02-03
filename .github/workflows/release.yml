@@ -41,14 +41,14 @@ jobs:
       - name: Package
         run: |
           cd target/${{ matrix.target }}/release
-          tar czf ../../../dusk-warden-${{ matrix.target }}.tar.gz dusk-warden
+          tar czf ../../../vault-sync-${{ matrix.target }}.tar.gz vault-sync
           cd ../../..
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: dusk-warden-${{ matrix.target }}
-          path: dusk-warden-${{ matrix.target }}.tar.gz
+          name: vault-sync-${{ matrix.target }}
+          path: vault-sync-${{ matrix.target }}.tar.gz
 
   release:
     needs: build
@@ -61,5 +61,5 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: dusk-warden-*.tar.gz
+          files: vault-sync-*.tar.gz
           generate_release_notes: true

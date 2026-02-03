@@ -7,13 +7,13 @@ use config::Config;
 use std::process::Command;
 
 #[derive(Parser)]
-#[command(name = "dusk-warden", about = "Sync Bitwarden secrets to .env files")]
+#[command(name = "vault-sync", about = "Sync Bitwarden secrets to .env files")]
 enum Cli {
     /// Download secrets from Bitwarden and write them to configured .env files
     Sync,
     /// Upload local .env files to Bitwarden secrets
     Push,
-    /// Update dusk-warden to the latest release
+    /// Update vault-sync to the latest release
     Update,
 }
 

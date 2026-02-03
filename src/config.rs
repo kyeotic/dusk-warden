@@ -2,7 +2,7 @@ use anyhow::{Context, Result};
 use serde::Deserialize;
 use std::path::PathBuf;
 
-const CONFIG_FILE: &str = ".dusk-warden.toml";
+const CONFIG_FILE: &str = ".vault-sync.toml";
 const BWS_FILE: &str = ".bws";
 
 #[derive(Deserialize)]

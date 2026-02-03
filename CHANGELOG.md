@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.5.0] - 2026-02-02
+
+### Changed
+
+- Project renamed from `dusk-warden` to `vault-sync`.
+	- Binary/CLI command is now `vault-sync`.
+	- Config file renamed to `.vault-sync.toml`.
+	- Release artifacts and install script updated to `vault-sync`.
+	- Documentation and GitHub workflow adjusted accordingly.
+
 ## [0.4.1] - 2026-02-01
 
 ### Fixed
