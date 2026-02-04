@@ -7,7 +7,15 @@ Sync [Bitwarden Secrets Manager](https://bitwarden.com/products/secrets-manager/
 - [Bitwarden Secrets CLI (`bws`)](https://bitwarden.com/help/secrets-manager-cli/) installed
 - A `BWS_ACCESS_TOKEN` provided via environment variable or a `.bws` file (see below)
 
-## Install
+## Installation
+
+### With Homebrew (tap)
+
+```
+brew install kyeotic/tap/vault-sync
+```
+
+### One-line Shell
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/kyeotic/vault-sync/main/install.sh | bash
