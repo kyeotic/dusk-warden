@@ -1,6 +1,6 @@
 #!/bin/bash
 # Wrapper installer for vault-sync.
-# Usage: curl -fsSL https://raw.githubusercontent.com/kyeotic/vault-sync/main/install.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/kyeotic/vault-sync/main/install | bash
 set -euo pipefail
 
 export INSTALL_REPO="kyeotic/vault-sync"

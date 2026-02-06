@@ -37,6 +37,15 @@ fn version_from_tag(tag: &str) -> &str {
 }
 
 pub fn update() -> Result<()> {
+    if let Ok(exe) = std::env::current_exe() {
+        if exe.to_string_lossy().contains("/nix/store/") {
+            anyhow::bail!(
+                "This binary was installed via Nix. Update with:\n  \
+                 nix profile upgrade --flake github:kyeotic/vault-sync"
+            );
+        }
+    }
+
     let agent = ureq::Agent::new_with_defaults();
     let latest_tag = fetch_latest_tag(&agent)?;
     let latest_version = version_from_tag(&latest_tag);

@@ -18,7 +18,13 @@ brew install kyeotic/tap/vault-sync
 ### One-line Shell
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/kyeotic/vault-sync/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/kyeotic/vault-sync/main/install | bash
+```
+
+### With Nix Flakes
+
+```bash
+nix profile install github:kyeotic/vault-sync
 ```
 
 Or download a binary from the [releases page](https://github.com/kyeotic/vault-sync/releases).
@@ -113,3 +119,6 @@ vault-sync update
 ```
 
 This checks for the latest GitHub release and replaces the binary in-place if a newer version is available.
+
+> **Note:** Self-update is not supported when installed via Nix.
+> Use `nix profile upgrade --flake github:kyeotic/vault-sync` instead.
