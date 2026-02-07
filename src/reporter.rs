@@ -29,6 +29,16 @@ impl Reporter {
         println!(" {} {}", "Pushed".updated().align_right(12), path);
     }
 
+    pub fn retrying(path: &str, attempt: u32, max_attempts: u32) {
+        println!(
+            " {} {} (429, attempt {}/{})",
+            "Retrying".waiting().align_right(12),
+            path,
+            attempt,
+            max_attempts
+        );
+    }
+
     // --- update command labels ---
 
     pub fn current_version(version: &str) {
@@ -83,6 +93,7 @@ mod tests {
         Reporter::updated("services/api/.env");
         Reporter::up_to_date("services/api/.env");
         Reporter::pushed("services/api/.env");
+        Reporter::retrying("services/api/.env", 1, 3);
         println!();
         println!("  === Update actions ===");
         Reporter::current_version("0.5.4");

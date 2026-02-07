@@ -9,7 +9,19 @@ const BWS_FILE: &str = ".bws";
 
 #[derive(Deserialize)]
 pub struct Config {
+    #[serde(default = "default_max_threads")]
+    pub max_threads: usize,
+    #[serde(default = "default_max_retries")]
+    pub max_retries: u32,
     pub secrets: Vec<SecretMapping>,
+}
+
+fn default_max_threads() -> usize {
+    3
+}
+
+fn default_max_retries() -> u32 {
+    3
 }
 
 #[derive(Deserialize)]

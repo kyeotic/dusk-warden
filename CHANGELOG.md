@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.5.8] - 2026-02-06
+
+### Added
+- Retry with exponential backoff for `bws` API calls that receive 429 (rate limit) responses.
+- `max_threads` and `max_retries` config fields in `.vault-sync.toml` (default: 3 each).
+
+### Changed
+- `sync` now limits concurrent `bws` calls to `max_threads` (default 3) instead of using all CPU cores, preventing thundering herd 429 errors.
+
 ## [0.5.7] - 2026-02-05
 
 ### Added

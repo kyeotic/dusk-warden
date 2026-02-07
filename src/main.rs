@@ -9,6 +9,9 @@ use config::Config;
 use rayon::prelude::*;
 use reporter::Reporter;
 use std::process::Command;
+use std::thread;
+use std::time::Duration;
+
 
 #[derive(Parser)]
 #[command(name = "vault-sync", about = "Sync Bitwarden secrets to .env files")]
@@ -44,17 +47,24 @@ fn sync(dry_run: bool) -> Result<()> {
     let config = Config::load()?;
     let token = config::resolve_bws_token()?;
 
-    // Fetch all secrets in parallel (the slow part)
-    let results: Vec<_> = config
-        .secrets
-        .par_iter()
-        .map(|secret| {
-            let value = fetch_secret(&secret.id, &token)
-                .with_context(|| format!("Failed to fetch secret for {}", secret.path))?;
-            let existing = std::fs::read_to_string(&secret.path).ok();
-            Ok((secret, value, existing))
-        })
-        .collect::<Result<Vec<_>>>()?;
+    // Fetch all secrets in parallel with limited concurrency
+    let pool = rayon::ThreadPoolBuilder::new()
+        .num_threads(config.max_threads)
+        .build()
+        .context("Failed to build thread pool")?;
+
+    let results: Vec<_> = pool.install(|| {
+        config
+            .secrets
+            .par_iter()
+            .map(|secret| {
+                let value = fetch_secret(&secret.id, &token, &secret.path, config.max_retries)
+                    .with_context(|| format!("Failed to fetch secret for {}", secret.path))?;
+                let existing = std::fs::read_to_string(&secret.path).ok();
+                Ok((secret, value, existing))
+            })
+            .collect::<Result<Vec<_>>>()
+    })?;
 
     // Process results sequentially (file writes and output)
     for (secret, value, existing) in results {
@@ -84,7 +94,7 @@ fn push() -> Result<()> {
         let value = std::fs::read_to_string(&secret.path)
             .with_context(|| format!("Failed to read {}", secret.path))?;
 
-        update_secret(&secret.id, &value, &token)
+        update_secret(&secret.id, &value, &token, &secret.path, config.max_retries)
             .with_context(|| format!("Failed to push secret for {}", secret.path))?;
 
         Reporter::pushed(&secret.path);
@@ -93,12 +103,33 @@ fn push() -> Result<()> {
     Ok(())
 }
 
-fn update_secret(secret_id: &str, value: &str, token: &str) -> Result<()> {
-    let output = Command::new("bws")
-        .args(["secret", "edit", "--value", value, secret_id])
-        .env("BWS_ACCESS_TOKEN", token)
-        .output()
-        .context("Failed to run bws CLI. Is it installed?")?;
+fn run_bws(args: &[&str], token: &str, name: &str, max_retries: u32) -> Result<std::process::Output> {
+    for attempt in 1..=max_retries {
+        let output = Command::new("bws")
+            .args(args)
+            .env("BWS_ACCESS_TOKEN", token)
+            .output()
+            .context("Failed to run bws CLI. Is it installed?")?;
+
+        if output.status.success() {
+            return Ok(output);
+        }
+
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        if stderr.contains("429") && attempt < max_retries {
+            Reporter::retrying(name, attempt, max_retries);
+            thread::sleep(Duration::from_secs(1 << attempt)); // 2s, 4s
+            continue;
+        }
+
+        return Ok(output);
+    }
+
+    unreachable!()
+}
+
+fn update_secret(secret_id: &str, value: &str, token: &str, name: &str, max_retries: u32) -> Result<()> {
+    let output = run_bws(&["secret", "edit", "--value", value, secret_id], token, name, max_retries)?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
@@ -119,12 +150,8 @@ fn check_bws_error(stderr: &str, secret_id: &str) -> anyhow::Error {
     }
 }
 
-fn fetch_secret(secret_id: &str, token: &str) -> Result<String> {
-    let output = Command::new("bws")
-        .args(["secret", "get", secret_id])
-        .env("BWS_ACCESS_TOKEN", token)
-        .output()
-        .context("Failed to run bws CLI. Is it installed?")?;
+fn fetch_secret(secret_id: &str, token: &str, name: &str, max_retries: u32) -> Result<String> {
+    let output = run_bws(&["secret", "get", secret_id], token, name, max_retries)?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
