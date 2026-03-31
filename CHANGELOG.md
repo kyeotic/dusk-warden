@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.6.1] - 2026-03-31
+
+### Changed
+
+- `push` now fetches the current remote value before uploading and reports "Up to date" when the local file matches, consistent with `sync` behavior.
+
 ## [0.6.0] - 2026-02-06
 
 ### Breaking Changes

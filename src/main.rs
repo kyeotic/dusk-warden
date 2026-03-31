@@ -105,10 +105,18 @@ fn push(target: Option<String>) -> Result<()> {
     };
 
     for secret in secrets {
-        let value = std::fs::read_to_string(&secret.path)
+        let local = std::fs::read_to_string(&secret.path)
             .with_context(|| format!("Failed to read {}", secret.path))?;
 
-        update_secret(secret, &value, &token, config.max_retries)
+        let remote = fetch_secret(secret, &token, config.max_retries)
+            .with_context(|| format!("Failed to fetch secret '{}' for {}", secret.name, secret.path))?;
+
+        if local == remote {
+            Reporter::up_to_date(secret);
+            continue;
+        }
+
+        update_secret(secret, &local, &token, config.max_retries)
             .with_context(|| format!("Failed to push secret '{}' for {}", secret.name, secret.path))?;
 
         Reporter::pushed(secret);
