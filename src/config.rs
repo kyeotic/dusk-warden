@@ -81,9 +81,17 @@ pub fn resolve_bws_token() -> Result<String> {
         return Ok(token);
     }
 
-    let home = PathBuf::from(std::env::var("HOME").context("HOME not set")?);
-    let mut dir = std::env::current_dir().context("Failed to get current directory")?;
+    let home_raw = PathBuf::from(std::env::var("HOME").context("HOME not set")?);
+    // Canonicalize both paths so symlinks (e.g. /home -> /var/home on Bazzite/immutable
+    // distros) don't cause the prefix check to fail when getcwd() returns the real path.
+    let home = home_raw.canonicalize().unwrap_or(home_raw);
+    let dir_raw = std::env::current_dir().context("Failed to get current directory")?;
+    let dir = dir_raw.canonicalize().unwrap_or(dir_raw);
 
+    find_bws_token_in_tree(home, dir)
+}
+
+fn find_bws_token_in_tree(home: PathBuf, mut dir: PathBuf) -> Result<String> {
     loop {
         let candidate = dir.join(BWS_FILE);
         if candidate.is_file() {
@@ -127,6 +135,40 @@ pub fn resolve_bws_token() -> Result<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
+    use std::os::unix::fs::symlink;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    // Simulates Bazzite/immutable distros where HOME=/home/user (a symlink) but
+    // getcwd() returns the real path /var/home/user/project. Canonicalizing both
+    // sides of the comparison ensures the walk doesn't stop prematurely.
+    #[test]
+    fn find_bws_token_resolves_symlinked_home() {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .subsec_nanos();
+        let base = std::env::temp_dir().join(format!("vault_sync_test_{nonce}"));
+        let real_home = base.join("real_home");
+        let sym_home = base.join("sym_home");
+        let project_dir = real_home.join("project");
+
+        fs::create_dir_all(&project_dir).unwrap();
+        symlink(&real_home, &sym_home).unwrap();
+
+        let bws_file = real_home.join(BWS_FILE);
+        fs::write(&bws_file, "BWS_ACCESS_TOKEN=test-token-123\n").unwrap();
+
+        // HOME points through the symlink; current dir is the real path — matching
+        // the exact mismatch that occurs on Bazzite.
+        let result = find_bws_token_in_tree(
+            sym_home.canonicalize().unwrap_or(sym_home),
+            project_dir.canonicalize().unwrap_or(project_dir),
+        );
+
+        assert_eq!(result.unwrap(), "test-token-123");
+        let _ = fs::remove_dir_all(&base);
+    }
 
     #[test]
     fn expand_template_no_markers_returns_unchanged() {

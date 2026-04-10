@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.6.2] - 2026-04-10
+
+### Fixed
+
+- `.bws` file lookup now works correctly on systems where `$HOME` is a symlink to a different path prefix (e.g. `/home -> /var/home` on Bazzite and other immutable distros). Both `HOME` and the current directory are canonicalized before comparison so the directory walk no longer stops prematurely.
+
 ## [0.6.1] - 2026-03-31
 
 ### Changed
